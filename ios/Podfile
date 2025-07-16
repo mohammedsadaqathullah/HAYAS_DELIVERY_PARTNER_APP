@@ -17,6 +17,15 @@ end
 target 'HayasDeliveryPartnerApp' do
   config = use_native_modules!
 
+  # Permissions - react-native-permissions
+  permissions_path = '../node_modules/react-native-permissions/ios'
+
+  # Permissions
+  pod 'Permission-Camera', :path => "#{permissions_path}/Camera"
+  pod 'Permission-PhotoLibrary', :path => "#{permissions_path}/PhotoLibrary"
+  pod 'Permission-MediaLibrary', :path => "#{permissions_path}/MediaLibrary" # Add this for MediaLibrary permission
+
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
