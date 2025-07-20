@@ -54,7 +54,7 @@ export const ordersApi = createApi({
       },
     }),
     getPendingLiveOrders: builder.query({
-      query: () => "/pending/live",
+      query: (email) => `/pending/live?email=${encodeURIComponent(email)}`,
       providesTags: ["Order"],
     }),
   }),

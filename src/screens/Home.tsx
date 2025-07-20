@@ -39,7 +39,7 @@ const Home = ({ navigation }: any) => {
 
   const { data: activeDatas, refetch } = useGetActiveOrdersQuery(userDetails?.email)
   const [fetchPending, setFetchPending] = useState(false);
-  const { data: pendingOrders, error: pendingError, isLoading: isPendingLoading, refetch: refetchPending } = useGetPendingLiveOrdersQuery(undefined, { skip: !fetchPending });
+  const { data: pendingOrders, error: pendingError, isLoading: isPendingLoading, refetch: refetchPending } = useGetPendingLiveOrdersQuery(userDetails?.email, { skip: !fetchPending });
 
   // Fetch pending orders only when duty is ON (on mount or toggle)
   useEffect(() => {
