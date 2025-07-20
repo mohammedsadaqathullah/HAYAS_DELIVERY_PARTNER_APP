@@ -20,13 +20,14 @@ import CurrentOrderCard from "../components/CurrentOrderCard"
 import StatsCard from "../components/StatsCard"
 import OrderModal from "../components/OrderModal"
 import Icon from "react-native-vector-icons/Ionicons"
-import { useGetActiveOrdersQuery } from "../redux/Api/ordersApi"
+import { useGetActiveOrdersQuery, useGetPendingLiveOrdersQuery } from "../redux/Api/ordersApi"
 import { useSelector } from "react-redux"
 import type { RootState } from "../redux/store"
 import { DrawerActions } from "@react-navigation/native"
 import { Image } from "react-native"
 import { useGetDeliveryPartnerSummaryQuery } from "../redux/Api/deliveryPartnerStatsApi"
 import { useGetAvailableEarningsQuery } from "../redux/Api/withdrawalApi"
+import baseurl from "../redux/baseurl"
 
 const Home = ({ navigation }: any) => {
   const [currentOrder, setCurrentOrder] = useState(null)
@@ -37,6 +38,33 @@ const Home = ({ navigation }: any) => {
   const userDetails = useSelector((state: RootState) => state.user.userDetails)
 
   const { data: activeDatas, refetch } = useGetActiveOrdersQuery(userDetails?.email)
+  const [fetchPending, setFetchPending] = useState(false);
+  const { data: pendingOrders, error: pendingError, isLoading: isPendingLoading, refetch: refetchPending } = useGetPendingLiveOrdersQuery(undefined, { skip: !fetchPending });
+
+  // Fetch pending orders only when duty is ON (on mount or toggle)
+  useEffect(() => {
+    if (dutyStatus) {
+      setFetchPending(true);
+    } else {
+      setFetchPending(false);
+    }
+  }, [dutyStatus]);
+
+  useEffect(() => {
+    if (
+      fetchPending &&
+      dutyStatus &&
+      pendingOrders &&
+      pendingOrders.length > 0 &&
+      !currentOrder &&
+      !showOrderModal
+    ) {
+      const order = pendingOrders[0];
+      setIncomingOrder(order);
+      setShowOrderModal(true);
+      setFetchPending(false); // Only show once after fetch
+    }
+  }, [pendingOrders, fetchPending, dutyStatus, currentOrder, showOrderModal]);
 
   // Get today's stats
   const { data: todayStats,refetch : summaryRefetch } = useGetDeliveryPartnerSummaryQuery(
@@ -125,6 +153,32 @@ const Home = ({ navigation }: any) => {
       }
     }
   }, [socket, isConnected, dutyStatus, currentOrder, showOrderModal, userEmail])
+
+  // Heartbeat: Send every 12 minutes when ON duty
+  useEffect(() => {
+    const sendHeartbeat = async () => {
+      try {
+        const email = userEmail || userDetails?.email;
+        if (!email) return;
+        await fetch(`${baseurl}/duty-status/heartbeat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+      } catch (err) {
+        console.error('Heartbeat error:', err);
+      }
+    };
+
+    let interval: NodeJS.Timeout | null = null;
+    if (dutyStatus) {
+      sendHeartbeat(); // Send immediately
+      interval = setInterval(sendHeartbeat, 12 * 60 * 1000); // Every 12 minutes
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [dutyStatus, userEmail, userDetails?.email]);
 
   const loadDutyStatus = async () => {
     try {
@@ -277,6 +331,21 @@ const Home = ({ navigation }: any) => {
           <StatsCard title="Today's Earnings" value={`₹${todayEarnings}`} icon="trending-up" />
           <StatsCard title="Completed" value={todayCompletedOrders.toString()} icon="checkmark-circle" />
         </View>
+
+        {/* Pending Orders Section */}
+        {/* {dutyStatus && pendingOrders && pendingOrders.length > 0 && (
+          <View style={{ padding: 20 }}>
+            <Text style={styles.sectionTitle}>Pending Orders</Text>
+            {pendingOrders.map((order: any) => (
+              <View key={order._id} style={{ backgroundColor: '#1c1c1e', padding: 16, borderRadius: 10, marginBottom: 12 }}>
+                <Text style={{ color: '#FFD700', fontWeight: 'bold' }}>Order ID: {order._id}</Text>
+                <Text style={{ color: '#fff' }}>User: {order.userEmail}</Text>
+                <Text style={{ color: '#fff' }}>Address: {order.address?.street}, {order.address?.area}</Text>
+                <Text style={{ color: '#FF9800' }}>Status: {order.status}</Text>
+              </View>
+            ))}
+          </View>
+        )} */}
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>

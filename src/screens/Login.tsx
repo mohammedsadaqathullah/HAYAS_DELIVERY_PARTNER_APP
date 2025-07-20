@@ -190,7 +190,7 @@ const Login = () => {
                 placeholder="Enter your email"
                 placeholderTextColor="#888"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={text => setEmail(text.trim().toLowerCase())}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 editable={!loop}

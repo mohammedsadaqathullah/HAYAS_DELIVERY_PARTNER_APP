@@ -28,6 +28,8 @@ export const setupAudio = async () => {
 };
 
 export const playAudio = async () => {
+  // Always seek to the beginning before playing
+  await TrackPlayer.seekTo(0);
   const state = await TrackPlayer.getState();
   if (state !== State.Playing) {
     await TrackPlayer.play();

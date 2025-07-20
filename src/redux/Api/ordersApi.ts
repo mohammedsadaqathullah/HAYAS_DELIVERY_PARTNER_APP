@@ -53,6 +53,10 @@ export const ordersApi = createApi({
         return currentArg !== previousArg
       },
     }),
+    getPendingLiveOrders: builder.query({
+      query: () => "/pending/live",
+      providesTags: ["Order"],
+    }),
   }),
 })
 
@@ -61,4 +65,5 @@ export const {
   useUpdateOrderStatusMutation,
   useGetActiveOrdersQuery,
   useGetOrdersWithPaginationQuery,
+  useGetPendingLiveOrdersQuery,
 } = ordersApi
